@@ -28,18 +28,21 @@ WHERE discontinued = 0;
 ALTER TABLE order_details
 DROP CONSTRAINT fk_orderdetails_productid;
 
--- очистим таблицу "products":
-TRUNCATE TABLE products;
+ -- удаляем связанные кортежи в таблице order_details
+DELETE FROM order_details
+WHERE product_id IN (
+  SELECT product_id
+  FROM products
+  WHERE discontinued = 1
+);
+
+-- очищаем таблицу "products":
+TRUNCATE TABLE products CASCADE;
 
 --восстановливаем данные из временной таблицы в таблицу "products":
 INSERT INTO products
 SELECT tp.*
-FROM tmp_products tp
-WHERE NOT EXISTS (
-  SELECT 1
-  FROM products p
-  WHERE p.product_id = tp.product_id
-);
+FROM tmp_products tp;
 
 -- восстановливаем ограничения foreign key
 ALTER TABLE order_details
